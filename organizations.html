@@ -40,22 +40,48 @@
     <script src="lib/underscore.js"></script>
     <script src="js/mapper.js"></script>
     <script>
+
+    function findGetParameter(parameterName) {
+    var result = null,
+        tmp = [];
+    var items = location.search.substr(1).split("&");
+    for (var index = 0; index < items.length; index++) {
+        tmp = items[index].split("=");
+        if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
+    }
+    return result;
+    }
+
+    var yearsArray = ['2008', '2009', '2010', '2011', '2012', '2013'];
+    //var yearsArray = ['2008'];
+    var getYears = findGetParameter('years');
+    if (getYears != null) {
+        yearsArray = getYears.split(',');
+    }
+
       //*******************************************************************
       //  CREATE MATRIX AND MAP
       //*******************************************************************
-      d3.csv('data/organizations.csv', function (error, data) {
+      d3.csv('data/publications_orgs_count.csv', function (error, data) {
         var mpr = chordMpr(data);
 
         mpr
-          .addValuesToMap('importer1')
-          .addValuesToMap('importer2')
+          .addValuesToMap('org1')
+          .addValuesToMap('org2')
           .setFilter(function (row, a, b) {
-            return (row.importer1 === a.name && row.importer2 === b.name) ||
-                   (row.importer1 === b.name && row.importer2 === a.name)
+            return (row.org1 === a.name && row.org2 === b.name) ||
+                   (row.org1 === b.name && row.org2 === a.name)
           })
           .setAccessor(function (recs, a, b) {
             if (!recs[0]) return 0;
-              return recs[0].importer1 === a.name ? +recs[0].flow1 : +recs[0].flow2; 
+              // TODO understand this
+              //return recs[0].org1 === a.name ? +recs[0].flow1 : +recs[0].flow2;
+              var sum = 0;
+              for (let year of yearsArray){
+                  sum = sum + Number(recs[0][year]);
+              }
+              return sum;
+              //return + recs[0][yearsArray[0]];
           });
         drawChords(mpr.getMatrix(), mpr.getMap());
       });
@@ -135,21 +161,21 @@
             var p = d3.format(".1%"), q = d3.format(",.2f")
             return "Chord Info:<br/>"
               +  d.sname + " imports from " + d.tname
-              + ": $" + q(d.svalue) + "M<br/>"
-              + p(d.svalue/d.stotal) + " of " + d.sname + "'s Total ($" + q(d.stotal) + "M)<br/>"
-              + p(d.svalue/d.mtotal) + " of Matrix Total ($" + q(d.mtotal) + "M)<br/>"
+              + ": $" + q(d.svalue) + "<br/>"
+              + p(d.svalue/d.stotal) + " of " + d.sname + "'s Total ($" + q(d.stotal) + ")<br/>"
+              + p(d.svalue/d.mtotal) + " of Matrix Total ($" + q(d.mtotal) + ")<br/>"
               + "<br/>"
               + d.tname + " imports from " + d.sname
-              + ": $" + q(d.tvalue) + "M<br/>"
-              + p(d.tvalue/d.ttotal) + " of " + d.tname + "'s Total ($" + q(d.ttotal) + "M)<br/>"
-              + p(d.tvalue/d.mtotal) + " of Matrix Total ($" + q(d.mtotal) + "M)";
+              + ": $" + q(d.tvalue) + "<br/>"
+              + p(d.tvalue/d.ttotal) + " of " + d.tname + "'s Total ($" + q(d.ttotal) + ")<br/>"
+              + p(d.tvalue/d.mtotal) + " of Matrix Total ($" + q(d.mtotal) + ")";
           }
 
           function groupTip (d) {
             var p = d3.format(".1%"), q = d3.format(",.2f")
             return "Group Info:<br/>"
-                + d.gname + " : " + q(d.gvalue) + "M<br/>"
-                + p(d.gvalue/d.mtotal) + " of Matrix Total (" + q(d.mtotal) + "M)"
+                + d.gname + " : " + q(d.gvalue) + "<br/>"
+                + p(d.gvalue/d.mtotal) + " of Matrix Total (" + q(d.mtotal) + ")"
           }
 
           function mouseover(d, i) {
